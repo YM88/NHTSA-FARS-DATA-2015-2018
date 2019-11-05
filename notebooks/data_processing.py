@@ -3,25 +3,25 @@ import pandas as pd
 import zipfile
 
 def process_data(year):
-    
-    year = str(2018)
-    
+
+    year = str(year)
+
     ############################################################
     ## import dataframe
     ############################################################
-    
+
     data_file = "../data/FARS" + year + "NationalCSV.zip"
-    
+
     with zipfile.ZipFile(data_file) as zip:
         with zip.open("ACCIDENT.csv") as csv:
-            df = pd.read_csv(csv) 
-    
+            df = pd.read_csv(csv)
+
     df.columns = df.columns.str.lower()
-    
+
     ############################################################
     ## COLUMN: US state
     ############################################################
-    
+
     states = {
          1: "AL",  2: "AK",  4: "AZ",  5: "AR",
          6: "CA",  8: "CO",  9: "CT", 10: "DE",
@@ -38,19 +38,19 @@ def process_data(year):
         52: "VI", 53: "WA", 54: "WV", 55: "WI",
         56: "WY",
     }
-    
+
     df["state"] = df["state"].apply(lambda x: states[x])
-    
+
     ############################################################
     ## COLUMN: case number
     ############################################################
-    
+
     df.rename(columns={"st_case": "case"}, inplace=True)
-    
+
     ############################################################
     ## COLUMN: date
     ############################################################
-    
+
     filter_hour   = (df.hour   == 99)
     filter_minute = (df.minute == 99)
 
@@ -65,11 +65,11 @@ def process_data(year):
 
     _state, _case, *cols, _date = list(df.columns)
     df = df[["state", "case", "date"] + cols]
-    
+
     ############################################################
     ## COLUMN: longitude & latitude
     ############################################################
-    
+
     filter_lon = (df["longitud"] > 0)
 
     df.loc[filter_lon, "longitud"] = -115
@@ -82,50 +82,50 @@ def process_data(year):
 
     _state, _case, _date, *cols, _lon, _lat = list(df.columns)
     df = df[["state", "case", "date", "lon", "lat"] + cols]
-    
+
     ############################################################
     ## COLUMN: vehicles involved
     ############################################################
-    
+
     df.rename(columns={"ve_total": "vehicles"}, inplace=True)
-    
+
     ############################################################
     ## COLUMN: DROP
     ############################################################
-    
+
     df.drop(columns=["ve_forms"], inplace=True)
     df.drop(columns=["pvh_invl"], inplace=True)
-    
+
     ############################################################
     ## COLUMN: pedestrians
     ############################################################
-    
+
     df.rename(columns={"peds": "pedestrians"}, inplace=True)
-    
+
     ############################################################
     ## COLUMN: DROP
     ############################################################
-    
+
     df.drop(columns=["pernotmvit"], inplace=True)
     df.drop(columns=["permvit"],    inplace=True)
-    
+
     ############################################################
     ## COLUMN: people & fatalities
     ############################################################
-    
+
     _state, _case, _date, _lon, _lat, _vehicles, _pedestrians, _persons, *cols, _fatals, _drunk_dr = list(df.columns)
     df = df[["state", "case", "date", "lon", "lat", "vehicles", "pedestrians", "persons", "fatals", "drunk_dr"] + cols]
-    
+
     ############################################################
     ## COLUMN: DROP
     ############################################################
-    
+
     df.drop(columns=["county"],   inplace=True)
     df.drop(columns=["city"],     inplace=True)
     df.drop(columns=["day_week"], inplace=True)
     df.drop(columns=["nhs"],      inplace=True)
     df.drop(columns=["rur_urb"],  inplace=True)
-    
+
     df.drop(columns=["func_sys"], inplace=True)
     df.drop(columns=["rd_owner"], inplace=True)
     df.drop(columns=["route"],    inplace=True)
@@ -143,7 +143,7 @@ def process_data(year):
     df.drop(columns=["lgt_cond"], inplace=True)
     df.drop(columns=["weather1"], inplace=True)
     df.drop(columns=["weather2"], inplace=True)
-    
+
     df.drop(columns=["weather"], inplace=True)
     df.drop(columns=["sch_bus"], inplace=True)
     df.drop(columns=["rail"], inplace=True)
@@ -156,5 +156,5 @@ def process_data(year):
     df.drop(columns=["cf1"], inplace=True)
     df.drop(columns=["cf2"], inplace=True)
     df.drop(columns=["cf3"], inplace=True)
-    
+
     return df
