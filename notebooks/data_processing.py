@@ -180,6 +180,8 @@ def process_data(year):
 
     violations = {**reckless, **impaired, **speeding, **other}
     
+    df_viol["mviolatn"] = df_viol["mviolatn"].map(violations)
+    
     ## prepare dataframe to merge
     
     df_viol = df_viol.groupby(["st_case"])["mviolatn"].agg(set)
