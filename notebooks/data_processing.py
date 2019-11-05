@@ -135,26 +135,68 @@ def process_data(year):
     df.drop(columns=["sp_jur"],   inplace=True)
     df.drop(columns=["harm_ev"],  inplace=True)
     df.drop(columns=["man_coll"], inplace=True)
-    df.drop(columns=["reljct1"], inplace=True)
-    df.drop(columns=["reljct2"], inplace=True)
-    df.drop(columns=["typ_int"], inplace=True)
+    df.drop(columns=["reljct1"],  inplace=True)
+    df.drop(columns=["reljct2"],  inplace=True)
+    df.drop(columns=["typ_int"],  inplace=True)
     df.drop(columns=["wrk_zone"], inplace=True)
     df.drop(columns=["rel_road"], inplace=True)
     df.drop(columns=["lgt_cond"], inplace=True)
     df.drop(columns=["weather1"], inplace=True)
     df.drop(columns=["weather2"], inplace=True)
 
-    df.drop(columns=["weather"], inplace=True)
-    df.drop(columns=["sch_bus"], inplace=True)
-    df.drop(columns=["rail"], inplace=True)
+    df.drop(columns=["weather"],  inplace=True)
+    df.drop(columns=["sch_bus"],  inplace=True)
+    df.drop(columns=["rail"],     inplace=True)
     df.drop(columns=["not_hour"], inplace=True)
-    df.drop(columns=["not_min"], inplace=True)
+    df.drop(columns=["not_min"],  inplace=True)
     df.drop(columns=["arr_hour"], inplace=True)
-    df.drop(columns=["arr_min"], inplace=True)
-    df.drop(columns=["hosp_hr"], inplace=True)
-    df.drop(columns=["hosp_mn"], inplace=True)
-    df.drop(columns=["cf1"], inplace=True)
-    df.drop(columns=["cf2"], inplace=True)
-    df.drop(columns=["cf3"], inplace=True)
+    df.drop(columns=["arr_min"],  inplace=True)
+    df.drop(columns=["hosp_hr"],  inplace=True)
+    df.drop(columns=["hosp_mn"],  inplace=True)
+    df.drop(columns=["cf1"],      inplace=True)
+    df.drop(columns=["cf2"],      inplace=True)
+    df.drop(columns=["cf3"],      inplace=True)
+
+    ############################################################
+    ## COLUMN: VIOLATIONS
+    ############################################################
+
+    with zipfile.ZipFile(data_file) as zip:
+        try:
+            with zip.open('VIOLATN.csv') as csv:
+                df_viol = pd.read_csv(csv)
+        except:
+            with zip.open('Violatn.csv') as csv:
+                df_viol = pd.read_csv(csv)
+
+    df_viol.columns = df_viol.columns.str.lower()
+
+    ## dictionary for grouping violations
+
+    reckless = {j: "reckless" for j in range(1, 11)}
+    impaired = {j: "impaired" for j in range(11, 20)}
+    speeding = {j: "speeding" for j in range(21, 30)}
+    other    = {j: "other"    for j in list(range(30, 100)) + [0]}
+
+    violations = {**reckless, **impaired, **speeding, **other}
+
+    df_viol["mviolatn"] = df_viol["mviolatn"].map(violations)
+
+    ## prepare dataframe to merge
+
+    df_viol = df_viol.groupby(["st_case"])["mviolatn"].agg(set)
+
+    df_viol = pd.DataFrame(df_viol).reset_index()
+    df_viol.rename(columns={"st_case": "case"}, inplace=True)
+
+    df_viol["mviolatn"] = df_viol["mviolatn"].map(sorted)
+
+    df_viol["impaired"] = df_viol["mviolatn"].map(lambda x: 1 if "impaired" in x else 0)
+    df_viol["reckless"] = df_viol["mviolatn"].map(lambda x: 1 if "reckless" in x else 0)
+    df_viol["speeding"] = df_viol["mviolatn"].map(lambda x: 1 if "speeding" in x else 0)
+
+    ## merging violations
+
+    df = df.merge(df_viol[["case", "reckless", "impaired", "speeding"]], on="case")
 
     return df
