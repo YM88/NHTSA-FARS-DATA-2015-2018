@@ -141,10 +141,42 @@ def process_data(year):
     df.drop(columns=["wrk_zone"], inplace=True)
     df.drop(columns=["rel_road"], inplace=True)
     df.drop(columns=["lgt_cond"], inplace=True)
-    df.drop(columns=["weather1"], inplace=True)
-    df.drop(columns=["weather2"], inplace=True)
+
+    ############################################################
+    ## COLUMN: WEATHER
+    ############################################################
+
+    cond_road = {
+         0: 0,  # No Additional Atmospheric Conditions
+         1: 0,  # Clear
+         2: 1,  # Rain
+         4: 1,  # Snow
+         5: 1,  # Fog, Smog, Smoke
+         6: 1,  # Severe Crosswinds
+         7: 1,  # Blowing Sand, Soil, Dirt
+         8: 0,  # Other
+        10: 0,  # Cloudy
+        11: 1,  # Blowing Snow
+        12: 1,  # Freezing Rain or Drizzle
+        98: 0,  # Not Reported
+        99: 0,  # Unknown
+    }
+
+    df['weather0_road'] = df['weather'].map(cond_road)
+    df['weather1_road'] = df['weather1'].map(cond_road)
+    df['weather2_road'] = df['weather2'].map(cond_road)
+
+    df["cond_road"] = df["weather0_road"] + df["weather1_road"] + df["weather2_road"]
+
+    df["cond_road"] = df["cond_road"].fillna(0).astype(bool).astype(int)
+
+    df = df.drop(columns=["weather", "weather1", "weather2", "weather0_road", "weather1_road", "weather2_road"])
+    df = df.rename(columns={"cond_road": "weather"})
     
-    df.drop(columns=["weather"],  inplace=True)
+    ############################################################
+    ## COLUMN: DROP
+    ############################################################
+    
     df.drop(columns=["sch_bus"],  inplace=True)
     df.drop(columns=["rail"],     inplace=True)
     df.drop(columns=["not_hour"], inplace=True)
