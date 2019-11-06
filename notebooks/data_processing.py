@@ -3,25 +3,25 @@ import pandas as pd
 import zipfile
 
 def process_data(year):
-    
+
     year = str(year)
-    
+
     ############################################################
     ## import dataframe
     ############################################################
-    
+
     data_file = "../data/FARS" + year + "NationalCSV.zip"
-    
+
     with zipfile.ZipFile(data_file) as zip:
         with zip.open("ACCIDENT.csv") as csv:
-            df = pd.read_csv(csv) 
-    
+            df = pd.read_csv(csv)
+
     df.columns = df.columns.str.lower()
-    
+
     ############################################################
     ## COLUMN: US state
     ############################################################
-    
+
     states = {
          1: "AL",  2: "AK",  4: "AZ",  5: "AR",
          6: "CA",  8: "CO",  9: "CT", 10: "DE",
@@ -38,19 +38,19 @@ def process_data(year):
         52: "VI", 53: "WA", 54: "WV", 55: "WI",
         56: "WY",
     }
-    
+
     df["state"] = df["state"].apply(lambda x: states[x])
-    
+
     ############################################################
     ## COLUMN: case number
     ############################################################
-    
+
     df.rename(columns={"st_case": "case"}, inplace=True)
-    
+
     ############################################################
     ## COLUMN: date
     ############################################################
-    
+
     filter_hour   = (df.hour   == 99)
     filter_minute = (df.minute == 99)
 
@@ -65,11 +65,11 @@ def process_data(year):
 
     _state, _case, *cols, _date = list(df.columns)
     df = df[["state", "case", "date"] + cols]
-    
+
     ############################################################
     ## COLUMN: longitude & latitude
     ############################################################
-    
+
     filter_lon = (df["longitud"] > 0)
 
     df.loc[filter_lon, "longitud"] = -115
@@ -82,50 +82,50 @@ def process_data(year):
 
     _state, _case, _date, *cols, _lon, _lat = list(df.columns)
     df = df[["state", "case", "date", "lon", "lat"] + cols]
-    
+
     ############################################################
     ## COLUMN: vehicles involved
     ############################################################
-    
+
     df.rename(columns={"ve_total": "vehicles"}, inplace=True)
-    
+
     ############################################################
     ## COLUMN: DROP
     ############################################################
-    
+
     df.drop(columns=["ve_forms"], inplace=True)
     df.drop(columns=["pvh_invl"], inplace=True)
-    
+
     ############################################################
     ## COLUMN: pedestrians
     ############################################################
-    
+
     df.rename(columns={"peds": "pedestrians"}, inplace=True)
-    
+
     ############################################################
     ## COLUMN: DROP
     ############################################################
-    
+
     df.drop(columns=["pernotmvit"], inplace=True)
     df.drop(columns=["permvit"],    inplace=True)
-    
+
     ############################################################
     ## COLUMN: people & fatalities
     ############################################################
-    
+
     _state, _case, _date, _lon, _lat, _vehicles, _pedestrians, _persons, *cols, _fatals, _drunk_dr = list(df.columns)
     df = df[["state", "case", "date", "lon", "lat", "vehicles", "pedestrians", "persons", "fatals", "drunk_dr"] + cols]
-    
+
     ############################################################
     ## COLUMN: DROP
     ############################################################
-    
+
     df.drop(columns=["county"],   inplace=True)
     df.drop(columns=["city"],     inplace=True)
     df.drop(columns=["day_week"], inplace=True)
     df.drop(columns=["nhs"],      inplace=True)
     df.drop(columns=["rur_urb"],  inplace=True)
-    
+
     df.drop(columns=["func_sys"], inplace=True)
     df.drop(columns=["rd_owner"], inplace=True)
     df.drop(columns=["route"],    inplace=True)
@@ -141,6 +141,7 @@ def process_data(year):
     df.drop(columns=["wrk_zone"], inplace=True)
     df.drop(columns=["rel_road"], inplace=True)
     df.drop(columns=["lgt_cond"], inplace=True)
+<<<<<<< HEAD
 
     ############################################################
     ## COLUMN: WEATHER
@@ -177,6 +178,12 @@ def process_data(year):
     ## COLUMN: DROP
     ############################################################
     
+=======
+    df.drop(columns=["weather1"], inplace=True)
+    df.drop(columns=["weather2"], inplace=True)
+
+    df.drop(columns=["weather"],  inplace=True)
+>>>>>>> a006bce39661b7830e41e12e1c1ea38e76cdf829
     df.drop(columns=["sch_bus"],  inplace=True)
     df.drop(columns=["rail"],     inplace=True)
     df.drop(columns=["not_hour"], inplace=True)
@@ -188,21 +195,21 @@ def process_data(year):
     df.drop(columns=["cf1"],      inplace=True)
     df.drop(columns=["cf2"],      inplace=True)
     df.drop(columns=["cf3"],      inplace=True)
-    
+
     ############################################################
     ## COLUMN: VIOLATIONS
     ############################################################
-    
+
     with zipfile.ZipFile(data_file) as zip:
         try:
             with zip.open('VIOLATN.csv') as csv:
-                df_viol = pd.read_csv(csv) 
+                df_viol = pd.read_csv(csv)
         except:
             with zip.open('Violatn.csv') as csv:
-                df_viol = pd.read_csv(csv) 
+                df_viol = pd.read_csv(csv)
 
     df_viol.columns = df_viol.columns.str.lower()
-    
+
     ## dictionary for grouping violations
 
     reckless = {j: "reckless" for j in range(1, 11)}
@@ -211,24 +218,38 @@ def process_data(year):
     other    = {j: "other"    for j in list(range(30, 100)) + [0]}
 
     violations = {**reckless, **impaired, **speeding, **other}
-    
+
     df_viol["mviolatn"] = df_viol["mviolatn"].map(violations)
-    
+
     ## prepare dataframe to merge
-    
+
     df_viol = df_viol.groupby(["st_case"])["mviolatn"].agg(set)
 
     df_viol = pd.DataFrame(df_viol).reset_index()
     df_viol.rename(columns={"st_case": "case"}, inplace=True)
-    
+
     df_viol["mviolatn"] = df_viol["mviolatn"].map(sorted)
-    
+
     df_viol["impaired"] = df_viol["mviolatn"].map(lambda x: 1 if "impaired" in x else 0)
     df_viol["reckless"] = df_viol["mviolatn"].map(lambda x: 1 if "reckless" in x else 0)
     df_viol["speeding"] = df_viol["mviolatn"].map(lambda x: 1 if "speeding" in x else 0)
-    
+
     ## merging violations
-    
+
     df = df.merge(df_viol[["case", "reckless", "impaired", "speeding"]], on="case")
-    
+
     return df
+
+
+def smoothTriangle(data, degree):
+    triangle=np.concatenate((np.arange(degree + 1), np.arange(degree)[::-1])) # up then down
+    smoothed=[]
+
+    for i in range(degree, len(data) - degree * 2):
+        point=data[i:i + len(triangle)] * triangle
+        smoothed.append(np.sum(point)/np.sum(triangle))
+    # Handle boundaries
+    smoothed=[smoothed[0]]*int(degree + degree/2) + smoothed
+    while len(smoothed) < len(data):
+        smoothed.append(smoothed[-1])
+    return smoothed
