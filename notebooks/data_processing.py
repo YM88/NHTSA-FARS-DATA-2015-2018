@@ -141,7 +141,6 @@ def process_data(year):
     df.drop(columns=["wrk_zone"], inplace=True)
     df.drop(columns=["rel_road"], inplace=True)
     df.drop(columns=["lgt_cond"], inplace=True)
-<<<<<<< HEAD
 
     ############################################################
     ## COLUMN: WEATHER
@@ -173,17 +172,11 @@ def process_data(year):
 
     df = df.drop(columns=["weather", "weather1", "weather2", "weather0_road", "weather1_road", "weather2_road"])
     df = df.rename(columns={"cond_road": "weather"})
-    
+
     ############################################################
     ## COLUMN: DROP
     ############################################################
-    
-=======
-    df.drop(columns=["weather1"], inplace=True)
-    df.drop(columns=["weather2"], inplace=True)
 
-    df.drop(columns=["weather"],  inplace=True)
->>>>>>> a006bce39661b7830e41e12e1c1ea38e76cdf829
     df.drop(columns=["sch_bus"],  inplace=True)
     df.drop(columns=["rail"],     inplace=True)
     df.drop(columns=["not_hour"], inplace=True)
